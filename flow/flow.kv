@@ -1,5 +1,26 @@
 #:kivy 1.7.2
 
+<Tile>:
+	background_color: 0.3, 0.3, 0.3, 0.3
+	canvas:
+		Color: 
+			rgba: self.color
+		Ellipse:
+			size: (self.width * .6), (self.width * .6)
+			pos: self.center_x - (self.width * .6)/2, self.center_y - (self.width * .6)/2
+
+<Pipe>:
+	background_color: 0.3, 0.3, 0.3, 0.3
+	canvas:
+		Color:
+			rgba: self.color
+		Ellipse:
+			size: (self.width * .6), (self.width * .6)
+			pos: self.center_x - (self.width * .6)/2, self.center_y - (self.width * .6)/2
+#		Rectangle:
+#			size: (self.width * .5), self.height
+#			pos: (self.center_x - self.width / 4), self.y
+
 <AppBackground>:
     canvas:
         Color:
