@@ -14,12 +14,16 @@
 	canvas:
 		Color:
 			rgba: self.color
-		Ellipse:
-			size: (self.width * .6), (self.width * .6)
-			pos: self.center_x - (self.width * .6)/2, self.center_y - (self.width * .6)/2
-#		Rectangle:
-#			size: (self.width * .5), self.height
-#			pos: (self.center_x - self.width / 4), self.y
+		Line:
+			points: self.center_x, self.top, self.center_x, self.y
+			width: self.width * .15
+
+<FlowGame>:
+    padding: 5
+    spacing: 5
+
+<MenuBar>:
+	spacing: 5
 
 <AppBackground>:
     canvas:
@@ -27,9 +31,3 @@
             rgb: 0.08, 0.20, 0.28
         Rectangle:
             size: self.size
-
-<FlowGame>:
-    cols: 5
-    rows: 5
-    padding: 5
-    spacing: 5
