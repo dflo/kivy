@@ -13,6 +13,7 @@ from kivy.graphics import Color, Ellipse
 from kivy.properties import NumericProperty
 from kivy.uix.popup import Popup
 from kivy.clock import Clock
+from kivy.properties import ListProperty
 
 Config.set('graphics', 'width', '400') # change to 1200 for Nexus 7
 Config.set('graphics', 'height', '640') # change to 1920 for Nexus 7
@@ -37,12 +38,16 @@ board2 = 'testboard2.txt'
 board3 = 'testboard3.txt'
 board4 = 'testboard4.txt'
 board5 = 'testboard5.txt'
-boards = [board0, board1, board2, board3, board4, board5]
+board6 = 'testboard6.txt'
+boards = [board0, board1, board2, board3, board4, board5, board6]
 place = 0
+# Other vars
 num_of_pipes = 0
 score = 'Score: 0'
 attempts = 0
 saved_board = None
+saved_children = []
+pipes_visted = 0
 
 def change_board():
     global place 
@@ -52,12 +57,42 @@ def change_board():
 
 def save_game():
     global saved_board
-    saved_board = root.flowgame
+    saved_board = (place - 1) % len(boards)
+    for child in root.flowgame.children:
+        saved_children.append(child)
+
 
 
 def load_game():
-    global saved_board
-    root.flowgame = saved_board
+    global place
+    if saved_board != None:
+        place = saved_board
+        change_board()
+        root.flowgame.clear_widgets()
+        for i in range(len(saved_children) - 1, -1, -1):
+            child = saved_children[i]
+            root.flowgame.add_widget(child)
+            
+
+
+def update_prev_shape(touch):
+    if touch.prev.shape[0] == None or touch.prev.shape[1] == None:
+        pass
+    elif touch.prev.shape[0] == touch.prev.shape[1]:
+        if touch.prev.shape[0] % 2 == 0:
+            touch.prev.color_tb = touch.prev.leader.color
+        else:
+            touch.prev.color_lr = touch.prev.leader.color
+    elif touch.prev.shape[0] + touch.prev.shape[1] == 3:
+        if touch.prev.shape[0] < touch.prev.shape[1]:
+            touch.prev.color_tr = touch.prev.leader.color
+        else:
+            touch.prev.color_bl = touch.prev.leader.color
+    else:
+        if touch.prev.shape[0] == 2 or touch.prev.shape[0] == 1:
+            touch.prev.color_br = touch.prev.leader.color
+        else:
+            touch.prev.color_tl = touch.prev.leader.color
 
 
 class Tile(Button):
@@ -70,7 +105,7 @@ class Tile(Button):
         self.north = None
         self.south = None
         self.cardinal = []
-        self.shape = [5,5]
+        self.shape = [None,None]
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
@@ -86,31 +121,45 @@ class Tile(Button):
     def on_touch_up(self, touch):
         global score
         global attempts
-        if self.collide_point(*touch.pos):
+        if self.collide_point(*touch.pos) and self.parent.collide_point(*touch.opos):
             if (touch.origin.color == self.color) and (touch.origin != self):
                 # add the move made to shape list of previous node
                 touch.prev.shape[1] = touch.prev.cardinal.index(self)
                 print 'previous shape', touch.prev.shape
                 # complete a pipe
                 print('congrats on connecting one pipe')
+                update_prev_shape(touch)
                 attempts += 1
                 self.parent.completion.append(self.color)
                 score = 'Score: %.2f' %(100 * (len(self.parent.completion) / float(num_of_pipes)) * (num_of_pipes - abs(num_of_pipes - attempts)))
                 print score
                 root.menubar.label_score.text = score
-                if len(self.parent.completion) == num_of_pipes:
+                print 'target', len(self.parent.array) - 2 * num_of_pipes
+                print 'current', pipes_visted
+                if len(self.parent.completion) == num_of_pipes and (len(self.parent.array) - 2 * num_of_pipes == pipes_visted):
                     print('Game complete!')
                     self.parent.msg.open()
                 self.group = touch.origin.group
                 self.sibling = touch.origin
 
     def clear_group(self, index):
+        global pipes_visted
         for i in range(index, len(self.group)):
             item = self.group[i]
             if (item.leader == self) or (item.leader == self.sibling):
-                item.color = clear
+                item.color_bc = clear
+                item.color_lc = clear
+                item.color_tc = clear
+                item.color_rc = clear
+                item.color_tb = clear
+                item.color_lr = clear
+                item.color_tl = clear
+                item.color_tr = clear
+                item.color_bl = clear
+                item.color_br = clear
                 item.visited = 0
                 item.leader = None
+                pipes_visted -= 1
         if self.color in self.parent.completion:
             self.parent.completion.remove(self.color)
         self.group = self.group[:index]
@@ -119,6 +168,17 @@ class Tile(Button):
 
 
 class Pipe(Button):
+    color_bc = ListProperty([0,0,0,0])
+    color_lc = ListProperty([0,0,0,0])
+    color_tc = ListProperty([0,0,0,0])
+    color_rc = ListProperty([0,0,0,0])
+    color_tb = ListProperty([0,0,0,0])
+    color_lr = ListProperty([0,0,0,0])
+    color_tl = ListProperty([0,0,0,0])
+    color_tr = ListProperty([0,0,0,0])
+    color_bl = ListProperty([0,0,0,0])
+    color_br = ListProperty([0,0,0,0])
+
     def __init__(self, **kwargs):
         super(Pipe, self).__init__(**kwargs)
         self.leader = None
@@ -128,12 +188,25 @@ class Pipe(Button):
         self.south = None
         self.cardinal = []
         self.visited = 0
-        self.shape = [5,5]
+        self.shape = [None,None]
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             if self.leader: 
                 self.leader.clear_group(self.leader.group.index(self) + 1)
+                # clear coloring
+                self.color_bc = clear
+                self.color_lc = clear
+                self.color_tc = clear
+                self.color_rc = clear
+                self.color_tb = clear
+                self.color_lr = clear
+                self.color_tl = clear
+                self.color_tr = clear
+                self.color_bl = clear
+                self.color_br = clear
+                # update coloring 
+                self.update_curr_shape
                 touch.origin = self.leader
                 touch.prev = self
             else:
@@ -141,7 +214,8 @@ class Pipe(Button):
                 touch.prev = None
 
     def on_touch_move(self, touch):
-        if self.collide_point(*touch.pos):
+        global pipes_visted
+        if self.collide_point(*touch.pos) and self.parent.collide_point(*touch.opos):
             # check if we're a cardinal position from the touch
             # AND check if we haven't been colored already to avoid backtracking
             if touch.prev and (self in touch.prev.cardinal) and (self.visited == 0):
@@ -152,18 +226,28 @@ class Pipe(Button):
                 if touch.prev != self.leader:
                     self.leader = touch.origin
                     self.leader.group.append(self)
-                    self.color = self.leader.color
+                    self.color_ce = self.leader.color
                     self.visited = 1
+                    pipes_visted += 1
                     # add the move made to shape list of previous node
                     touch.prev.shape[1] = touch.prev.cardinal.index(self)
-                    print 'previous shape', touch.prev.shape
+                    update_prev_shape(touch)
                     # add the move made to shape list of current node
                     self.shape[0] = touch.prev.cardinal.index(self)
+                    self.update_curr_shape()
                     # print 'current shape', self.shape
                     # update previous node of touch
                     touch.prev = self
-            else:
-                pass
+
+    def update_curr_shape(self):
+        if self.shape[0] == 3:
+            self.color_rc = self.leader.color
+        elif self.shape[0] == 2:
+            self.color_tc = self.leader.color
+        elif self.shape[0] == 1:
+            self.color_lc = self.leader.color
+        elif self.shape[0] == 0:
+            self.color_bc = self.leader.color
 
 
 class FlowGame(GridLayout):
@@ -180,6 +264,7 @@ class FlowGame(GridLayout):
         global num_of_pipes
         global score
         global attempts
+        global pipes_visted
         # try to open board file
         try:
             fin = open(board, "r")
@@ -191,6 +276,7 @@ class FlowGame(GridLayout):
         self.array = []
         self.completion = []
         num_of_pipes = 0
+        pipes_visted = 0
         score = 'Score: 0'
         attempts = 0
         # create board
@@ -257,7 +343,7 @@ class MenuBar(StackLayout):
         # Button to Save/Load a game
         btn_save_load = Button(text='Save/Load', size_hint_x=0.25)
         save_load_msg = self.pop_up()
-        # btn_save_load.bind(on_press=save_load_msg.open())
+        btn_save_load.bind(on_press=save_load_msg.open)
         self.add_widget(btn_save_load)
         # Button to exit the game
         btn_exit = Button(text='Exit', size_hint_x=0.15)
@@ -270,13 +356,13 @@ class MenuBar(StackLayout):
         layout.add_widget(Label(text="[b]What would you like to do?[/b]", markup=True, font_size=15, size_hint=(0.5,0.5)))
         btn_save = Button(text='Save Game', size_hint_y=0.15)
         btn_load = Button(text='Load Game', size_hint_y=0.15)
-        btn_save.bind(on_release=lambda widget: save_game())
-        btn_load.bind(on_release=lambda widget: load_game())
+        btn_save.bind(on_press=lambda widget: save_game())
+        btn_load.bind(on_press=lambda widget: load_game())
         layout.add_widget(btn_save)
         layout.add_widget(btn_load)
         save_load_msg = Popup(title='Save/Load Games', markup=True, content=layout, size_hint=(0.66,0.5))
-        btn_save.bind(on_press=save_load_msg.dismiss)
-        btn_load.bind(on_press=save_load_msg.dismiss)
+        btn_save.bind(on_release=save_load_msg.dismiss)
+        btn_load.bind(on_release=save_load_msg.dismiss)
         return save_load_msg
     
 

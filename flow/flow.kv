@@ -13,10 +13,65 @@
 	background_color: 0.3, 0.3, 0.3, 0.3
 	canvas:
 		Color:
-			rgba: self.color
+			rgba: self.color_bc
 		Line:
-			points: self.center_x, self.top, self.center_x, self.y
+			points: self.center_x, self.y - 15, self.center_x, self.center_y
 			width: self.width * .15
+		
+		Color:
+			rgba: self.color_lc
+		Line:
+			points: self.x - 15, self.center_y, self.center_x, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_tc
+		Line:
+			points: self.center_x, self.top + 15, self.center_x, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_rc
+		Line:
+			points: self.right + 15, self.center_y, self.center_x, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_tb
+		Line:
+			points: self.center_x, self.top + 15, self.center_x, self.y - 15
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_lr
+		Line:
+			points: self.x - 15, self.center_y, self.right + 15, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_tl
+		Line:
+			points: self.center_x, self.y - 15, self.center_x, self.center_y, self.right + 15, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_tr
+		Line:
+			points: self.center_x, self.y - 15, self.center_x, self.center_y, self.x - 15, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_bl
+		Line:
+			points: self.center_x, self.top + 15, self.center_x, self.center_y, self.right + 15, self.center_y
+			width: self.width * .15
+		
+		Color:
+			rgba: self.color_br
+		Line:
+			points: self.center_x, self.top + 15, self.center_x, self.center_y, self.x - 15, self.center_y
+			width: self.width * .15
+
 
 <FlowGame>:
     padding: 5
